@@ -41,6 +41,7 @@ export default function WeddingMessagePage() {
   const [envelopeOpen, setEnvelopeOpen] = useState(false)
   const [savedGuest, setSavedGuest] = useState<GuestData | null>(null)
   const [isHydrated, setIsHydrated] = useState(false)
+  const [envelopeShake, setEnvelopeShake] = useState(false)
   const resetTapCountRef = useRef(0)
   const resetTapTimeRef = useRef<number>(0)
 
@@ -179,16 +180,26 @@ export default function WeddingMessagePage() {
             Message for You !
           </h1>
           <p className="text-xs md:text-sm text-[#8B6B5E] mt-3 tracking-widest">
-            {"- 2026.03.14 Uraoka Masafumi & Yukako Miki -"}
+            {"- 2026.03.14 Shinro Name & Shimpu Name -"}
           </p>
         </motion.div>
 
         {/* Envelope - fixed height container to prevent layout shift */}
         <motion.div
-          className="mb-10"
+          className="mb-10 cursor-pointer"
           initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            x: envelopeShake ? [0, -4, 4, -3, 3, 0] : 0,
+          }}
+          transition={{
+            opacity: { duration: 0.6, delay: 0.3 },
+            scale: { duration: 0.6, delay: 0.3 },
+            x: envelopeShake ? { duration: 0.8, ease: "easeInOut" } : { duration: 0 },
+          }}
+          onAnimationComplete={() => envelopeShake && setEnvelopeShake(false)}
+          onClick={() => setEnvelopeShake(true)}
         >
           <Envelope isOpen={envelopeOpen} />
         </motion.div>
