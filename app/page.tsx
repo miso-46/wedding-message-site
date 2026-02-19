@@ -1,69 +1,153 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Envelope } from "@/components/envelope"
 import { LetterOverlay } from "@/components/letter-overlay"
 
-
 type AppState = "idle" | "searching" | "opening" | "reading"
+
+type GuestData = {
+  name: string
+  message: string
+}
+
+const SAVED_GUEST_KEY = "saved_guest"
+
+/** 全角・半角スペースを削除 */
+function removeSpaces(str: string): string {
+  return str.replace(/\s/g, "").replace(/\u3000/g, "")
+}
+
+/** ひらがなをカタカナに変換 */
+function hiraganaToKatakana(str: string): string {
+  return str.replace(/[\u3040-\u309F]/g, (match) => {
+    const chr = match.charCodeAt(0) + 0x60
+    return String.fromCharCode(chr)
+  })
+}
+
+/** 検索用にユーザー入力を正規化 */
+function normalizeForSearch(input: string): string {
+  return hiraganaToKatakana(removeSpaces(input))
+}
 
 export default function WeddingMessagePage() {
   const [state, setState] = useState<AppState>("idle")
   const [name, setName] = useState("")
   const [error, setError] = useState("")
   const [guestName, setGuestName] = useState("")
+  const [guestMessage, setGuestMessage] = useState("")
   const [envelopeOpen, setEnvelopeOpen] = useState(false)
+  const [savedGuest, setSavedGuest] = useState<GuestData | null>(null)
+  const [isHydrated, setIsHydrated] = useState(false)
+
+  // ページ読み込み時に localStorage をチェック
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    try {
+      const raw = localStorage.getItem(SAVED_GUEST_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw) as GuestData
+        if (parsed?.name && parsed?.message) {
+          setSavedGuest(parsed)
+          setName(parsed.name)
+        }
+      }
+    } catch {
+      // パースエラー時は無視
+    }
+    setIsHydrated(true)
+  }, [])
+
+  const openLetter = useCallback((displayName: string, message: string) => {
+    setGuestName(displayName)
+    setGuestMessage(message)
+    setState("opening")
+
+    setTimeout(() => {
+      setEnvelopeOpen(true)
+    }, 300)
+
+    setTimeout(() => {
+      setState("reading")
+    }, 1000)
+  }, [])
 
   const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault()
       if (!name.trim()) return
 
       setError("")
+
+      // すでに保存済みの場合は検索せず直接開く
+      if (savedGuest) {
+        openLetter(savedGuest.name, savedGuest.message)
+        return
+      }
+
       setState("searching")
 
-      // Dummy logic: "テスト" in name = success, else = error
-      setTimeout(() => {
-        if (name.includes("テスト")) {
-          setGuestName(name.trim())
-          setState("opening")
+      try {
+        const res = await fetch("/data.json")
+        if (!res.ok) throw new Error("Failed to fetch")
+        const guests: Array<{ id: string; kanjiName: string; kanaName: string; message: string }> =
+          await res.json()
 
-          // Step 1: Open envelope flap
-          setTimeout(() => {
-            setEnvelopeOpen(true)
-          }, 300)
+        const normalizedInput = normalizeForSearch(name)
 
-          // Step 2: Show letter overlay after flap opens
-          setTimeout(() => {
-            setState("reading")
-          }, 1000)
+        const found = guests.find(
+          (g) =>
+            normalizedInput === g.kanjiName || normalizedInput === g.kanaName
+        )
+
+        if (found) {
+          const guestData: GuestData = {
+            name: found.kanjiName,
+            message: found.message,
+          }
+          localStorage.setItem(SAVED_GUEST_KEY, JSON.stringify(guestData))
+          setSavedGuest(guestData)
+          openLetter(guestData.name, guestData.message)
         } else {
           setError("お名前が見つかりません。入力ミスがないかご確認ください。")
           setState("idle")
         }
-      }, 800)
+      } catch {
+        setError("データの読み込みに失敗しました。しばらく経ってからお試しください。")
+        setState("idle")
+      }
     },
-    [name]
+    [name, savedGuest, openLetter]
   )
 
   const handleReset = useCallback(() => {
     setState("opening")
 
-    // Close envelope flap
     setTimeout(() => {
       setEnvelopeOpen(false)
     }, 300)
 
-    // Reset to idle after flap closes
     setTimeout(() => {
       setState("idle")
-      setName("")
       setGuestName("")
+      setGuestMessage("")
     }, 900)
   }, [])
 
-  const isInputDisabled = state === "searching" || state === "opening" || state === "reading"
+  const isInputDisabled =
+    savedGuest !== null || state === "searching" || state === "opening" || state === "reading"
+  const isButtonDisabled =
+    !savedGuest && (state === "searching" || state === "opening" || state === "reading" || !name.trim())
+
+  if (!isHydrated) {
+    return (
+      <main className="min-h-dvh bg-background text-foreground flex flex-col items-center justify-center relative overflow-hidden">
+        <div className="w-8 h-8 border-2 border-[#B85C47]/30 border-t-[#B85C47] rounded-full animate-spin" />
+      </main>
+    )
+  }
 
   return (
     <main className="min-h-dvh bg-background text-foreground flex flex-col items-center justify-center relative overflow-hidden">
@@ -117,8 +201,10 @@ export default function WeddingMessagePage() {
                   type="text"
                   value={name}
                   onChange={(e) => {
-                    setName(e.target.value)
-                    if (error) setError("")
+                    if (!savedGuest) {
+                      setName(e.target.value)
+                      if (error) setError("")
+                    }
                   }}
                   placeholder="例：鈴木太郎"
                   disabled={isInputDisabled}
@@ -129,7 +215,7 @@ export default function WeddingMessagePage() {
 
               <button
                 type="submit"
-                disabled={isInputDisabled || !name.trim()}
+                disabled={isButtonDisabled}
                 className="w-full py-3 rounded-lg bg-[#B85C47] text-[#FFF8F0] font-medium text-sm tracking-wider hover:bg-[#A04E3C] hover:shadow-lg hover:shadow-[#B85C47]/20 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md focus:ring-2 focus:ring-[#B85C47]/30 focus:ring-offset-2 focus:ring-offset-[#E6DECE] transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-none disabled:hover:translate-y-0 disabled:cursor-not-allowed cursor-pointer"
               >
                 {state === "searching" ? (
@@ -205,7 +291,7 @@ export default function WeddingMessagePage() {
 
         {/* Hint text */}
         <AnimatePresence>
-          {state === "idle" && !error && (
+          {(state === "idle" || savedGuest) && !error && (
             <motion.p
               className="text-xs text-[#8B6B5E]/60 mt-6 text-center"
               initial={{ opacity: 0 }}
@@ -213,7 +299,7 @@ export default function WeddingMessagePage() {
               exit={{ opacity: 0 }}
               transition={{ delay: 1, duration: 0.5 }}
             >
-              {"※ テスト: 「テスト」を含む名前で成功します"}
+              {"※一度お手紙を開くと、他のお名前では検索できなくなります"}
             </motion.p>
           )}
         </AnimatePresence>
@@ -222,7 +308,11 @@ export default function WeddingMessagePage() {
       {/* Letter reading overlay */}
       <AnimatePresence>
         {state === "reading" && (
-          <LetterOverlay guestName={guestName} onClose={handleReset} />
+          <LetterOverlay
+            guestName={guestName}
+            message={guestMessage}
+            onClose={handleReset}
+          />
         )}
       </AnimatePresence>
     </main>

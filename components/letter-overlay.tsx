@@ -4,10 +4,11 @@ import { motion } from "framer-motion"
 
 interface LetterOverlayProps {
   guestName: string
+  message: string
   onClose: () => void
 }
 
-export function LetterOverlay({ guestName, onClose }: LetterOverlayProps) {
+export function LetterOverlay({ guestName, message, onClose }: LetterOverlayProps) {
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
@@ -84,31 +85,14 @@ export function LetterOverlay({ guestName, onClose }: LetterOverlayProps) {
 
             {/* Message */}
             <motion.div
-              className="space-y-4 text-[#6B2D24]/90 text-sm leading-relaxed"
+              className="space-y-4 text-[#6B2D24]/90 text-sm leading-relaxed whitespace-pre-line"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9, duration: 0.6 }}
             >
-              <p>
-                本日はお忙しい中、私たちの結婚式にお越しいただきまして
-                <br />
-                誠にありがとうございます。
-              </p>
-              <p>
-                皆様に温かく見守っていただけることが
-                <br />
-                何よりの幸せです。
-              </p>
-              <p>
-                これからも二人で力を合わせ、
-                <br />
-                笑顔溢れる家庭を築いてまいります。
-              </p>
-              <p>
-                今後とも末永く
-                <br />
-                よろしくお願い申し上げます。
-              </p>
+              {message || (
+                <p className="text-[#8B6B5E]/70">メッセージがありません</p>
+              )}
             </motion.div>
 
             {/* Signature */}
