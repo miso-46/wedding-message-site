@@ -107,7 +107,7 @@ export function LetterOverlay({ guestName, message, onClose }: LetterOverlayProp
               >
                 <p className="text-xs text-[#8B6B5E] tracking-wider">2026.03.14</p>
                 <p className="text-sm text-[#6B2D24] mt-1 font-medium">
-                  裏岡 雅史 & 三木 悠夏子
+                  Shinro Name & Shimpu Name
                 </p>
               </motion.div>
 
