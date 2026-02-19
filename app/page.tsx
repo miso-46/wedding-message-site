@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Envelope } from "@/components/envelope"
 import { LetterOverlay } from "@/components/letter-overlay"
@@ -41,6 +41,8 @@ export default function WeddingMessagePage() {
   const [envelopeOpen, setEnvelopeOpen] = useState(false)
   const [savedGuest, setSavedGuest] = useState<GuestData | null>(null)
   const [isHydrated, setIsHydrated] = useState(false)
+  const resetTapCountRef = useRef(0)
+  const resetTapTimeRef = useRef<number>(0)
 
   // ページ読み込み時に localStorage をチェック
   useEffect(() => {
@@ -134,6 +136,20 @@ export default function WeddingMessagePage() {
       setGuestName("")
       setGuestMessage("")
     }, 900)
+  }, [])
+
+  /** 隠しリセット: 3秒以内に5回タップで localStorage クリア＆リロード */
+  const handleResetHintClick = useCallback(() => {
+    const now = Date.now()
+    if (now - resetTapTimeRef.current > 3000) {
+      resetTapCountRef.current = 0
+    }
+    resetTapTimeRef.current = now
+    resetTapCountRef.current += 1
+    if (resetTapCountRef.current >= 5) {
+      localStorage.clear()
+      window.location.reload()
+    }
   }, [])
 
   const isInputDisabled =
@@ -293,11 +309,12 @@ export default function WeddingMessagePage() {
         <AnimatePresence>
           {(state === "idle" || savedGuest) && !error && (
             <motion.p
-              className="text-xs text-[#8B6B5E]/60 mt-6 text-center"
+              className="text-xs text-[#8B6B5E]/60 mt-6 text-center cursor-default select-none"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ delay: 1, duration: 0.5 }}
+              onClick={handleResetHintClick}
             >
               {"※一度お手紙を開くと、他のお名前では検索できなくなります"}
             </motion.p>
