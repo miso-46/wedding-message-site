@@ -85,7 +85,7 @@ export function LetterOverlay({ guestName, message, onClose }: LetterOverlayProp
 
             {/* Message */}
             <motion.div
-              className="space-y-4 text-[#6B2D24]/90 text-sm leading-relaxed whitespace-pre-line"
+              className="space-y-4 text-[#6B2D24]/90 text-sm leading-relaxed whitespace-pre-wrap"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9, duration: 0.6 }}
