@@ -16,7 +16,7 @@ const playfairDisplay = Playfair_Display({
 })
 
 export const metadata: Metadata = {
-  title: 'Message for You ! - Uraoka & Miki Wedding',
+  title: 'Message for You ! -  Wedding Message Site',
   description: '結婚式のゲスト向けメッセージサイト',
 }
 
