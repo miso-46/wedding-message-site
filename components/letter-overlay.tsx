@@ -85,7 +85,10 @@ export function LetterOverlay({ guestName, message, onClose }: LetterOverlayProp
             </div>
 
             {/* 中間エリア: メッセージ本文（スクロール領域） */}
-            <div className="flex-1 min-h-0 overflow-y-auto py-6 pr-3">
+            <div
+              className="flex-1 min-h-0 overflow-y-auto py-6"
+              style={{ scrollbarGutter: "stable both-edges" } as React.CSSProperties}
+            >
               <motion.div
                 className="text-[#6B2D24]/90 text-sm leading-relaxed whitespace-pre-wrap"
                 initial={{ opacity: 0, y: 10 }}
