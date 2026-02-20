@@ -5,10 +5,11 @@ import { motion } from "framer-motion"
 interface LetterOverlayProps {
   guestName: string
   message: string
+  sender: string
   onClose: () => void
 }
 
-export function LetterOverlay({ guestName, message, onClose }: LetterOverlayProps) {
+export function LetterOverlay({ guestName, message, sender, onClose }: LetterOverlayProps) {
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
@@ -110,7 +111,7 @@ export function LetterOverlay({ guestName, message, onClose }: LetterOverlayProp
               >
                 <p className="text-xs text-[#8B6B5E] tracking-wider">2026.03.14</p>
                 <p className="text-sm text-[#6B2D24] mt-1 font-medium">
-                  Shinro Name & Shimpu Name
+                  {sender}
                 </p>
               </motion.div>
 

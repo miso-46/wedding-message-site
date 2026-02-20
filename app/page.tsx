@@ -10,6 +10,7 @@ type AppState = "idle" | "searching" | "opening" | "reading"
 type GuestData = {
   name: string
   message: string
+  sender: string
 }
 
 const SAVED_GUEST_KEY = "saved_guest"
@@ -38,6 +39,7 @@ export default function WeddingMessagePage() {
   const [error, setError] = useState("")
   const [guestName, setGuestName] = useState("")
   const [guestMessage, setGuestMessage] = useState("")
+  const [guestSender, setGuestSender] = useState("")
   const [envelopeOpen, setEnvelopeOpen] = useState(false)
   const [savedGuest, setSavedGuest] = useState<GuestData | null>(null)
   const [isHydrated, setIsHydrated] = useState(false)
@@ -51,9 +53,14 @@ export default function WeddingMessagePage() {
     try {
       const raw = localStorage.getItem(SAVED_GUEST_KEY)
       if (raw) {
-        const parsed = JSON.parse(raw) as GuestData
+        const parsed = JSON.parse(raw) as Partial<GuestData>
         if (parsed?.name && parsed?.message) {
-          setSavedGuest(parsed)
+          const guestData: GuestData = {
+            name: parsed.name,
+            message: parsed.message,
+            sender: parsed.sender ?? "Shinro Name & Shimpu Name",
+          }
+          setSavedGuest(guestData)
           setName(parsed.name)
         }
       }
@@ -63,19 +70,23 @@ export default function WeddingMessagePage() {
     setIsHydrated(true)
   }, [])
 
-  const openLetter = useCallback((displayName: string, message: string) => {
-    setGuestName(displayName)
-    setGuestMessage(message)
-    setState("opening")
+  const openLetter = useCallback(
+    (displayName: string, message: string, sender: string) => {
+      setGuestName(displayName)
+      setGuestMessage(message)
+      setGuestSender(sender)
+      setState("opening")
 
-    setTimeout(() => {
-      setEnvelopeOpen(true)
-    }, 300)
+      setTimeout(() => {
+        setEnvelopeOpen(true)
+      }, 300)
 
-    setTimeout(() => {
-      setState("reading")
-    }, 1000)
-  }, [])
+      setTimeout(() => {
+        setState("reading")
+      }, 1000)
+    },
+    []
+  )
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -86,7 +97,7 @@ export default function WeddingMessagePage() {
 
       // すでに保存済みの場合は検索せず直接開く
       if (savedGuest) {
-        openLetter(savedGuest.name, savedGuest.message)
+        openLetter(savedGuest.name, savedGuest.message, savedGuest.sender)
         return
       }
 
@@ -95,8 +106,13 @@ export default function WeddingMessagePage() {
       try {
         const res = await fetch("/data.json")
         if (!res.ok) throw new Error("Failed to fetch")
-        const guests: Array<{ id: string; kanjiName: string; kanaName: string; message: string }> =
-          await res.json()
+        const guests: Array<{
+          id: string
+          kanjiName: string
+          kanaName: string
+          message: string
+          sender?: string
+        }> = await res.json()
 
         const normalizedInput = normalizeForSearch(name)
 
@@ -109,10 +125,11 @@ export default function WeddingMessagePage() {
           const guestData: GuestData = {
             name: found.kanjiName,
             message: found.message,
+            sender: found.sender ?? "Shinro Name & Shimpu Name",
           }
           localStorage.setItem(SAVED_GUEST_KEY, JSON.stringify(guestData))
           setSavedGuest(guestData)
-          openLetter(guestData.name, guestData.message)
+          openLetter(guestData.name, guestData.message, guestData.sender)
         } else {
           setError("お名前が見つかりません。入力ミスがないかご確認ください。")
           setState("idle")
@@ -136,6 +153,7 @@ export default function WeddingMessagePage() {
       setState("idle")
       setGuestName("")
       setGuestMessage("")
+      setGuestSender("")
     }, 900)
   }, [])
 
@@ -339,6 +357,7 @@ export default function WeddingMessagePage() {
           <LetterOverlay
             guestName={guestName}
             message={guestMessage}
+            sender={guestSender}
             onClose={handleReset}
           />
         )}

@@ -48,7 +48,7 @@ GitHub のテンプレートとして使えるようになっています。プ�
 ゲストの「氏名」「フリガナ」「メッセージ」をまとめた JSON データを用意します。
 
 - **おすすめ**: Excel や Google スプレッドシートで氏名・フリガナ・メッセージを一覧にし、ChatGPT などに「JSON 形式にして」と頼むと楽です。
-- **形式**: `{ "id", "kanjiName", "kanaName", "message" }` の配列。改行は `\n` で表します。
+- **形式**: `{ "id", "kanjiName", "kanaName", "message", "sender" }` の配列。改行は `\n` で表します。`sender` は手紙の差出人名（例：新郎なら "Shinro Name"、新婦なら "Shimpu Name"）。
 - サンプルは `public/data.json` を参照してください。
 
 ### 4. GitHub 上で直接 `public/data.json` を編集してコミット・プッシュ
@@ -78,7 +78,7 @@ GitHub のテンプレートとして使えるようになっています。プ�
 
 - **技術**: Next.js 16, React 19, Tailwind CSS 4, Framer Motion 11, TypeScript
 - **構成**: `app/page.tsx`（メイン）、`components/envelope.tsx`（封筒）、`components/letter-overlay.tsx`（便箋）、`public/data.json`（ゲストデータ）
-- **データ形式**: `{ "id", "kanjiName", "kanaName", "message" }` の配列（`\n` で改行）
+- **データ形式**: `{ "id", "kanjiName", "kanaName", "message", "sender" }` の配列（`\n` で改行、`sender` は差出人名）
 
 ---
 
